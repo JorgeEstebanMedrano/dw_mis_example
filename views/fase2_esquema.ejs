@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Fase 2: Modelos ER</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <style>
+    :root { 
+      --base: #1e1e2e; --mantle: #181825; --text: #cdd6f4; --subtext: #a6adc8;
+      --blue: #89b4fa; --mauve: #cba6f7; --peach: #fab387; --surface0: #313244; 
+      --red: #f38ba8; --green: #a6e3a1; --yellow: #f9e2af;
+    }
+    body { font-family: sans-serif; background: var(--base); color: var(--text); padding: 15px; margin: 0; }
+    nav { background: var(--mantle); padding: 12px; border-radius: 8px; margin-bottom: 15px; display: flex; gap: 15px; }
+    nav a { color: var(--blue); text-decoration: none; font-weight: bold; padding: 5px 10px; }
+    nav a.activo { background: var(--surface0); color: var(--mauve); border-radius: 4px; }
+    
+    h1 { color: var(--peach); text-align: center; margin: 0 0 5px 0; font-size: 22px; }
+    p.subtitle { text-align: center; color: var(--subtext); margin-top: 0; font-size: 14px; margin-bottom: 20px;}
+    
+    .diagramas-container {
+      display: flex; flex-direction: column; gap: 40px;
+      max-width: 1200px; margin: 0 auto; padding-bottom: 40px;
+    }
+
+    .diagrama-card {
+      background: var(--surface0); padding: 30px; border-radius: 10px;
+      display: flex; flex-direction: column; align-items: center;
+      width: 100%; box-sizing: border-box; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+
+    .mermaid { width: 100%; display: flex; justify-content: center; }
+    .mermaid svg { min-height: 350px; max-width: 100%; }
+
+    .public-card { border-top: 4px solid var(--yellow); }
+    .staging-card { border-top: 4px solid var(--red); }
+    .dw-card { border-top: 4px solid var(--green); }
+
+    h2 { margin: 0 0 5px 0; font-size: 20px; text-transform: uppercase; letter-spacing: 1px; }
+    .badge { background: var(--mantle); padding: 4px 10px; border-radius: 20px; font-size: 12px; color: var(--subtext); margin-bottom: 20px;}
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/">1. Staging</a> <a href="/esquema" class="activo">2. Modelos Lógicos (ER)</a>
+    <a href="/etl">3. Data Warehouse</a> <a href="/bi">4. BI</a>
+  </nav>
+
+  <h1>Fase 2: Evolución de la Arquitectura de Datos</h1>
+  <p class="subtitle">El viaje desde el caos transaccional hasta el modelo analítico.</p>
+
+  <div class="diagramas-container">
+    
+    <div class="diagrama-card public-card">
+      <h2 style="color: var(--yellow);">1. Esquema Inicial (Transaccional - OLTP)</h2>
+      <div class="badge">Esquema: public | Total Tablas: <%= stats.public || 15 %></div>
+      <p style="color: var(--subtext); font-size: 14px; text-align: center; max-width: 800px; margin-top: 0;">Modelo altamente normalizado diseñado para inserciones rápidas, no para consultas. Observa la complejidad de las relaciones (Telaraña).</p>
+      <div class="mermaid">
+        erDiagram
+          CUSTOMER }|--|{ ADDRESS : "vive en"
+          STORE }|--|| ADDRESS : "ubicada en"
+          STAFF }|--|| ADDRESS : "vive en"
+          CITY }|--|{ COUNTRY : "pertenece a"
+          ADDRESS }|--|| CITY : "pertenece a"
+          STORE ||--|{ STAFF : "emplea"
+          STORE ||--|{ INVENTORY : "posee"
+          FILM ||--|{ INVENTORY : "copias en"
+          FILM ||--|{ FILM_ACTOR : "actúa en"
+          ACTOR ||--|{ FILM_ACTOR : "participa"
+          FILM ||--|{ FILM_CATEGORY : "clasificada"
+          CATEGORY ||--|{ FILM_CATEGORY : "agrupa"
+          CUSTOMER ||--|{ RENTAL : "alquila"
+          INVENTORY ||--o{ RENTAL : "es alquilado"
+          STAFF ||--o{ RENTAL : "procesa"
+          RENTAL ||--o{ PAYMENT : "paga"
+          CUSTOMER ||--|{ PAYMENT : "realiza"
+          STAFF ||--o{ PAYMENT : "cobra"
+      </div>
+    </div>
+
+    <div class="diagrama-card staging-card">
+      <h2 style="color: var(--red);">2. Esquema Staging (Área de Preparación)</h2>
+      <div class="badge">Esquema: staging | Total Tablas: <%= stats.staging || 1 %></div>
+      <p style="color: var(--subtext); font-size: 14px; text-align: center; max-width: 800px; margin-top: 0;">Extracción plana y desnormalizada. Excelente repositorio intermedio, pero excesivamente pesado y redundante para análisis final.</p>
+      <div class="mermaid">
+        erDiagram
+          alquileres_crudos {
+              int rental_id PK
+              date fecha
+              string cliente
+              string pelicula
+              string rating
+              string ciudad_tienda
+              string empleado
+              decimal monto
+          }
+      </div>
+    </div>
+
+    <div class="diagrama-card dw-card">
+      <h2 style="color: var(--green);">3. Esquema DW (Modelo Lógico en Estrella - OLAP)</h2>
+      <div class="badge">Esquema: dw | Total Tablas: <%= stats.dw || 6 %></div>
+      <p style="color: var(--subtext); font-size: 14px; text-align: center; max-width: 800px; margin-top: 0;">La estructura analítica perfecta. Una tabla central de hechos (h_ingresos) rodeada por dimensiones descriptivas.</p>
+      <div class="mermaid">
+        erDiagram
+          d_tiempo ||--o{ h_ingresos : "tiene"
+          d_cliente ||--o{ h_ingresos : "realiza"
+          d_pelicula ||--o{ h_ingresos : "genera"
+          d_tienda ||--o{ h_ingresos : "registra"
+          d_empleado ||--o{ h_ingresos : "atiende"
+
+          h_ingresos {
+              int id_tiempo FK
+              int id_cliente FK
+              int id_pelicula FK
+              int id_tienda FK
+              int id_empleado FK
+              int cantidad_alquileres
+              decimal monto_total
+          }
+          
+          d_cliente {
+              int id_cliente PK
+              string nombre
+          }
+          
+          d_pelicula {
+              int id_pelicula PK
+              string titulo
+              string clasificacion
+          }
+          
+          d_tiempo {
+              int id_tiempo PK
+              date fecha
+          }
+          
+          d_tienda {
+              int id_tienda PK
+              string ciudad
+          }
+          
+          d_empleado {
+              int id_empleado PK
+              string nombre
+          }
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'base',
+      themeVariables: {
+        primaryColor: '#181825',
+        primaryTextColor: '#cdd6f4',
+        primaryBorderColor: '#89b4fa',
+        lineColor: '#cba6f7',
+        secondaryColor: '#f38ba8',
+        tertiaryColor: '#313244',
+        fontFamily: 'sans-serif',
+        fontSize: '15px' 
+      }
+    });
+  </script>
+</body>
+</html>
