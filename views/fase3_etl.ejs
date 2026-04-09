@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Fase 3: Data Warehouse</title>
+  <style>
+    :root { --base: #1e1e2e; --mantle: #181825; --text: #cdd6f4; --blue: #89b4fa; --mauve: #cba6f7; --green: #a6e3a1; --surface0: #313244;}
+    body { font-family: sans-serif; background: var(--base); color: var(--text); padding: 20px; }
+    nav { background: var(--mantle); padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 20px;}
+    nav a { color: var(--blue); text-decoration: none; font-weight: bold; padding: 5px 10px; }
+    nav a.activo { background: var(--surface0); color: var(--mauve); }
+    .dims-container { display: flex; gap: 15px; overflow-x: auto; margin-bottom: 20px; padding-bottom: 10px; }
+    .dim-box { background: var(--surface0); padding: 10px; border-radius: 8px; min-width: 200px; border-top: 3px solid var(--blue); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--mantle); }
+    th, td { padding: 6px; border: 1px solid var(--base); text-align: left; }
+    th { color: var(--green); }
+    .cubo-table { background: var(--surface0); width: 100%; border-radius: 8px; overflow: hidden; }
+    .cubo-table th { background: var(--green); color: var(--mantle); padding: 10px; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/">1. Staging</a> <a href="/esquema">2. Modelización</a>
+    <a href="/etl" class="activo">3. Data Warehouse</a> <a href="/bi">4. BI</a>
+  </nav>
+
+  <h1 style="color: var(--green);">Fase 3: El Cubo Multidimensional</h1>
+  <p>El DW divide los datos en <b>Hechos</b> (métricas) y <b>Dimensiones</b> (contexto). Aquí vemos las 5 perspectivas de análisis creadas:</p>
+
+  <div class="dims-container">
+    <div class="dim-box"><h4>d_tiempo</h4><table><tr><th>ID</th><th>Fecha</th></tr><% dims.tiempo.rows.forEach(r => { %><tr><td><%= r.id_tiempo %></td><td><%= new Date(r.fecha).toLocaleDateString() %></td></tr><% }) %></table></div>
+    <div class="dim-box"><h4>d_cliente</h4><table><tr><th>ID</th><th>Nombre</th></tr><% dims.cliente.rows.forEach(r => { %><tr><td><%= r.id_cliente %></td><td><%= r.nombre.substring(0,10) %>...</td></tr><% }) %></table></div>
+    <div class="dim-box"><h4>d_pelicula</h4><table><tr><th>ID</th><th>Título</th></tr><% dims.pelicula.rows.forEach(r => { %><tr><td><%= r.id_pelicula %></td><td><%= r.titulo.substring(0,10) %>...</td></tr><% }) %></table></div>
+    <div class="dim-box"><h4>d_tienda</h4><table><tr><th>ID</th><th>Ciudad</th></tr><% dims.tienda.rows.forEach(r => { %><tr><td><%= r.id_tienda %></td><td><%= r.ciudad %></td></tr><% }) %></table></div>
+    <div class="dim-box"><h4>d_empleado</h4><table><tr><th>ID</th><th>Nombre</th></tr><% dims.empleado.rows.forEach(r => { %><tr><td><%= r.id_empleado %></td><td><%= r.nombre %></td></tr><% }) %></table></div>
+  </div>
+
+  <h2 style="color: var(--mauve);">Consultando el Cubo: Hechos + Dimensiones</h2>
+  <p>Al unir la tabla de hechos con las 5 dimensiones, obtenemos una vista analítica perfecta y comprensible para humanos:</p>
+  <table class="cubo-table">
+    <tr><th>D. Tiempo</th><th>D. Cliente</th><th>D. Película</th><th>D. Tienda</th><th>D. Empleado</th><th>Métrica (Ingreso)</th></tr>
+    <% cubo.forEach(c => { %>
+      <tr><td><%= new Date(c.fecha).toLocaleDateString() %></td><td><%= c.cliente %></td><td><%= c.pelicula %></td><td><%= c.tienda %></td><td><%= c.empleado %></td><td>$<%= c.monto_total %></td></tr>
+    <% }) %>
+  </table>
+</body>
+</html>

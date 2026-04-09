@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Fase 1: Fuentes y Staging</title>
+  <style>
+    :root { --base: #1e1e2e; --mantle: #181825; --text: #cdd6f4; --blue: #89b4fa; --mauve: #cba6f7; --red: #f38ba8; --surface0: #313244;}
+    body { font-family: 'Segoe UI', sans-serif; background: var(--base); color: var(--text); padding: 20px; }
+    nav { background: var(--mantle); padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 20px;}
+    nav a { color: var(--blue); text-decoration: none; font-weight: bold; padding: 5px 10px; border-radius: 5px; }
+    nav a.activo { background: var(--surface0); color: var(--mauve); }
+    table { width: 100%; border-collapse: collapse; background: var(--surface0); border-radius: 8px; overflow: hidden; font-size: 14px;}
+    th, td { padding: 10px; border-bottom: 1px solid var(--base); text-align: left; }
+    th { background: var(--red); color: var(--mantle); }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/" class="activo">1. Staging Area</a>
+    <a href="/esquema">2. Modelización Lógica</a>
+    <a href="/etl">3. Data Warehouse</a>
+    <a href="/bi">4. Business Intelligence</a>
+  </nav>
+
+  <h1 style="color: var(--red);">Fase 1: Extracción a Staging Area</h1>
+  <p>Cruce de 8 tablas transaccionales (DVD Rental) en una tabla desnormalizada temporal. Aquí el dato es pesado, redundante y no apto para consultas analíticas rápidas.</p>
+  
+  <table>
+    <tr><th>ID</th><th>Fecha</th><th>Cliente</th><th>Película</th><th>Rating</th><th>Tienda</th><th>Empleado</th><th>Monto</th></tr>
+    <% datos.forEach(f => { %>
+      <tr>
+        <td><%= f.rental_id %></td><td><%= new Date(f.fecha).toLocaleDateString() %></td>
+        <td><%= f.cliente %></td><td><%= f.pelicula %></td><td><%= f.rating %></td>
+        <td><%= f.ciudad_tienda %></td><td><%= f.empleado %></td><td>$<%= f.monto %></td>
+      </tr>
+    <% }); %>
+  </table>
+</body>
+</html>

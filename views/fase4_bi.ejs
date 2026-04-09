@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Fase 4: Business Intelligence</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root { 
+      --base: #1e1e2e; --mantle: #181825; --text: #cdd6f4; --subtext: #a6adc8;
+      --blue: #89b4fa; --mauve: #cba6f7; --yellow: #f9e2af; --peach: #fab387; 
+      --surface0: #313244; --green: #a6e3a1; --red: #f38ba8; --teal: #94e2d5;
+    }
+    body { font-family: sans-serif; background: var(--base); color: var(--text); padding: 15px; margin: 0; }
+    nav { background: var(--mantle); padding: 12px; border-radius: 8px; margin-bottom: 15px; display: flex; gap: 15px; }
+    nav a { color: var(--blue); text-decoration: none; font-weight: bold; padding: 5px 10px; }
+    nav a.activo { background: var(--surface0); color: var(--mauve); border-radius: 4px; }
+    
+    /* Cuadrícula de 3 columnas para 6 gráficos */
+    .dashboard { 
+      display: grid; 
+      grid-template-columns: repeat(3, 1fr); 
+      gap: 15px; 
+      padding-bottom: 20px;
+    }
+    
+    .chart-container { 
+      background: var(--surface0); 
+      padding: 15px; 
+      border-radius: 8px; 
+      border-top: 4px solid var(--blue); 
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      /* Mantenemos una altura controlada para que quepan todos en pantalla */
+      height: 260px; 
+    }
+    
+    .chart-wrapper {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    h1 { color: var(--yellow); text-align: center; margin: 0 0 15px 0; font-size: 22px; }
+    h2 { margin: 0 0 10px 0; font-size: 13px; text-align: center; color: var(--subtext); text-transform: uppercase; letter-spacing: 1px; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/">1. Staging</a> <a href="/esquema">2. Modelización</a>
+    <a href="/etl">3. Data Warehouse</a> <a href="/bi" class="activo">4. BI (Dashboard)</a>
+  </nav>
+
+  <h1>Fase 4: Dashboard Corporativo (Cubo OLAP)</h1>
+
+  <div class="dashboard">
+    <div class="chart-container" style="border-color: var(--blue);">
+      <h2>Evolución de Ingresos (D. Tiempo)</h2>
+      <div class="chart-wrapper"><canvas id="chartTiempo"></canvas></div>
+    </div>
+    
+    <div class="chart-container" style="border-color: var(--mauve);">
+      <h2>Top 5 Películas Rentables (D. Película)</h2>
+      <div class="chart-wrapper"><canvas id="chartPelicula"></canvas></div>
+    </div>
+
+    <div class="chart-container" style="border-color: var(--teal);">
+      <h2>Ingresos por Rating (D. Película)</h2>
+      <div class="chart-wrapper"><canvas id="chartClasificacion"></canvas></div>
+    </div>
+
+    <div class="chart-container" style="border-color: var(--peach);">
+      <h2>Top 5 Clientes (Frecuencia)</h2>
+      <div class="chart-wrapper"><canvas id="chartCliente"></canvas></div>
+    </div>
+    
+    <div class="chart-container" style="border-color: var(--green);">
+      <h2>Rendimiento en Ventas (D. Empleado)</h2>
+      <div class="chart-wrapper"><canvas id="chartEmpleado"></canvas></div>
+    </div>
+    
+    <div class="chart-container" style="border-color: var(--red);">
+      <h2>Ingresos por Sucursal (D. Tienda)</h2>
+      <div class="chart-wrapper"><canvas id="chartTienda"></canvas></div>
+    </div>
+  </div>
+
+  <script>
+    // Paleta Catppuccin Mocha para gráficos
+    const colores = ['#89b4fa', '#cba6f7', '#a6e3a1', '#fab387', '#f38ba8', '#94e2d5', '#f9e2af'];
+    Chart.defaults.color = '#a6adc8';
+    Chart.defaults.borderColor = '#45475a';
+    Chart.defaults.maintainAspectRatio = false; // Permite que se adapten al contenedor
+    
+    const opcionesBase = { plugins: { legend: { display: false } } };
+
+    // 1. Líneas (Tiempo)
+    const datosTiempo = <%- JSON.stringify(tiempo) %>;
+    new Chart(document.getElementById('chartTiempo'), {
+      type: 'line',
+      data: { labels: datosTiempo.map(d => d.fecha), datasets: [{ data: datosTiempo.map(d => d.total), borderColor: '#89b4fa', tension: 0.4, fill: true, backgroundColor: 'rgba(137, 180, 250, 0.1)' }] },
+      options: opcionesBase
+    });
+
+    // 2. Barras Horizontales (Películas)
+    const datosPelicula = <%- JSON.stringify(pelicula) %>;
+    new Chart(document.getElementById('chartPelicula'), {
+      type: 'bar',
+      data: { labels: datosPelicula.map(d => d.titulo.substring(0,12)), datasets: [{ data: datosPelicula.map(d => d.total), backgroundColor: '#cba6f7' }] },
+      options: { indexAxis: 'y', plugins: { legend: { display: false } } }
+    });
+
+    // 3. Doughnut (Clasificación)
+    const datosClasif = <%- JSON.stringify(clasificacion) %>;
+    new Chart(document.getElementById('chartClasificacion'), {
+      type: 'doughnut',
+      data: { labels: datosClasif.map(d => d.clasificacion), datasets: [{ data: datosClasif.map(d => d.total), backgroundColor: colores, borderWidth: 0 }] },
+      options: { plugins: { legend: { position: 'right', labels: { boxWidth: 12 } } }, cutout: '60%' }
+    });
+
+    // 4. Barras Verticales (Clientes)
+    const datosCliente = <%- JSON.stringify(cliente) %>;
+    new Chart(document.getElementById('chartCliente'), {
+      type: 'bar',
+      data: { labels: datosCliente.map(d => d.nombre.split(' ')[0]), datasets: [{ data: datosCliente.map(d => d.total_alquileres), backgroundColor: '#fab387' }] },
+      options: opcionesBase
+    });
+
+    // 5. Polar Area (Empleados)
+    const datosEmpleado = <%- JSON.stringify(empleado) %>;
+    new Chart(document.getElementById('chartEmpleado'), {
+      type: 'polarArea',
+      data: { labels: datosEmpleado.map(d => d.nombre), datasets: [{ data: datosEmpleado.map(d => d.total), backgroundColor: ['rgba(166, 227, 161, 0.7)', 'rgba(137, 180, 250, 0.7)'], borderColor: '#1e1e2e' }] },
+      options: { plugins: { legend: { position: 'bottom' } } }
+    });
+
+    // 6. Pie (Tienda)
+    const datosTienda = <%- JSON.stringify(tienda) %>;
+    new Chart(document.getElementById('chartTienda'), {
+      type: 'pie',
+      data: { labels: datosTienda.map(d => d.ciudad), datasets: [{ data: datosTienda.map(d => d.total), backgroundColor: ['#f38ba8', '#f9e2af'], borderWidth: 0 }] },
+      options: { plugins: { legend: { position: 'bottom' } } }
+    });
+  </script>
+</body>
+</html>
